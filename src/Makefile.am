@@ -1,7 +1,7 @@
-bin_PROGRAMS = main process-vmalloc
+bin_PROGRAMS = fdp1-test process-vmalloc
 
 
 AM_CPPFLAGS = -I$(top_srcdir)/ -I$(top_srcdir)/lib
 
-main_SOURCES = main.c
+fdp1_test_SOURCES = fdp1-test.c
 process_vmalloc_SOURCES = process-vmalloc.c
