@@ -179,12 +179,22 @@ static void init_video_dev(void)
 
 }
 
+static char * content_string = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
+
+static char get_content_char(unsigned int n)
+{
+	int pos = n % 32;
+	return content_string[pos];
+}
+
 static void gen_src_buf(void *p, size_t size)
 {
 	uint8_t val;
+	char * buffer = p;
+	int i;
 
-	val = rand() % 256;
-	memset(p, val, size);
+	for (i=0; i < size; i++)
+		*buffer++ = get_content_char(i);
 }
 
 static void gen_dst_buf(void *p, size_t size)
