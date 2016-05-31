@@ -23,6 +23,8 @@
 #include <linux/videodev2.h>
 #include <sys/mman.h>
 
+#include "crc.h"
+
 #define VIDEO_DEV_NAME	"/dev/video0"
 #define NUM_BUFS	4
 #define NUM_FRAMES	16
@@ -287,6 +289,11 @@ static int read_frame(int last)
 	} No Display for us ... We'll just print stats of the buffer */
 
 	hexdump(p_dst_buf[buf.index], 32, "DstBuf:");
+
+	debug("DstBuf[%d] CRC: 0x%x\n", buf.index,
+			crc8(0x00, p_dst_buf[buf.index],
+				   dst_buf_size[buf.index]) );
+
 
 	/* Enqueue back the buffer */
 	if (!last) {
