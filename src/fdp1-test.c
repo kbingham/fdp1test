@@ -9,7 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-
+#include <ctype.h>
 #include <getopt.h>
 #include <stdint.h>
 #include <stdbool.h>
@@ -69,6 +69,54 @@ static uint32_t num_src_bufs = 0, num_dst_bufs = 0;
 int curr_buf = 0;
 int num_frames = 6;
 
+#ifndef HEXDUMP_COLS
+#define HEXDUMP_COLS 8
+#endif
+
+void hexdump(void *mem, unsigned int len, char * pfx)
+{
+        unsigned int i, j;
+
+        for(i = 0; i < len + ((len % HEXDUMP_COLS) ? (HEXDUMP_COLS - len % HEXDUMP_COLS) : 0); i++)
+        {
+                /* print offset */
+                if(i % HEXDUMP_COLS == 0)
+                {
+                        printf("%s0x%06x: ", pfx, i);
+                }
+
+                /* print hex data */
+                if(i < len)
+                {
+                        printf("%02x ", 0xFF & ((char*)mem)[i]);
+                }
+                else /* end of block, just aligning for ASCII dump */
+                {
+                        printf("   ");
+                }
+
+                /* print ASCII dump */
+                if(i % HEXDUMP_COLS == (HEXDUMP_COLS - 1))
+                {
+                        for(j = i - (HEXDUMP_COLS - 1); j <= i; j++)
+                        {
+                                if(j >= len) /* end of block, not really printing */
+                                {
+                                        putchar(' ');
+                                }
+                                else if(isprint(((char*)mem)[j])) /* printable char */
+                                {
+                                        putchar(0xFF & ((char*)mem)[j]);
+                                }
+                                else /* other char */
+                                {
+                                        putchar('.');
+                                }
+                        }
+                        putchar('\n');
+                }
+        }
+}
 
 static void init_video_dev(void)
 {
@@ -186,6 +234,9 @@ static int read_frame(int last)
 		buf.bytesused	= src_buf_size[buf.index];
 		ret = ioctl(vid_fd, VIDIOC_QBUF, &buf);
 		perror_ret(ret != 0, "ioctl");
+
+		debug("Re-queueing Source buffer\n");
+		hexdump(p_src_buf[buf.index], 32, "SrcBuf:");
 	}
 
 
@@ -224,6 +275,8 @@ static int read_frame(int last)
 		memcpy(p_fb, (void *)p_dst_buf[buf.index], fb_buf_w);
 		p_fb += fb_line_w;
 	} No Display for us ... We'll just print stats of the buffer */
+
+	hexdump(p_dst_buf[buf.index], 32, "DstBuf:");
 
 	/* Enqueue back the buffer */
 	if (!last) {
@@ -362,6 +415,7 @@ int main(int argc, char ** argv)
 		ret = ioctl(vid_fd, VIDIOC_QBUF, &buf);
 		perror_exit(ret != 0, "ioctl");
 		debug("Queued OUTPUT buffer %d\n", buf.index);
+		hexdump(p_src_buf[i], 32, "SrcBuf:");
 	}
 
 	/* Start stream for Output */
@@ -380,6 +434,7 @@ int main(int argc, char ** argv)
 		ret = ioctl(vid_fd, VIDIOC_QBUF, &buf);
 		perror_exit(ret != 0, "ioctl");
 		debug("Queued CAPTURE buffer %d\n", buf.index);
+		hexdump(p_dst_buf[i], 32, "DstBuf:");
 	}
 
 	/* Start Stream for Capture */
