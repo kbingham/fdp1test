@@ -156,7 +156,9 @@ static void init_video_dev(void)
 	fmt.fmt.pix_mp.width	= width;
 	fmt.fmt.pix_mp.height	= height;
 	fmt.fmt.pix_mp.pixelformat = V4L2_PIX_FMT_YUV420M;
-	fmt.fmt.pix_mp.field	= V4L2_FIELD_INTERLACED;
+	fmt.fmt.pix_mp.pixelformat = V4L2_PIX_FMT_YUYV; // Single Plane Used
+
+	fmt.fmt.pix_mp.field	= V4L2_FIELD_NONE;
 
 	ret = ioctl(vid_fd, VIDIOC_S_FMT, &fmt);
 	perror_exit(ret != 0, "ioctl s_fmt video_output");
@@ -172,7 +174,8 @@ static void init_video_dev(void)
 	fmt.fmt.pix_mp.width	= width;
 	fmt.fmt.pix_mp.height	= height;
 	fmt.fmt.pix_mp.pixelformat = V4L2_PIX_FMT_RGB565X;
-	fmt.fmt.pix_mp.field	= V4L2_FIELD_ANY; // Do we need to set these?
+
+	fmt.fmt.pix_mp.field	= V4L2_FIELD_NONE; // Do we need to set these?
 
 	ret = ioctl(vid_fd, VIDIOC_S_FMT, &fmt);
 	perror_exit(ret != 0, "ioctl s_fmt video_capture");
