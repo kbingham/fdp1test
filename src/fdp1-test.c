@@ -68,6 +68,12 @@ static char *p_src_buf[NUM_BUFS], *p_dst_buf[NUM_BUFS];
 static size_t src_buf_size[NUM_BUFS], dst_buf_size[NUM_BUFS];
 static uint32_t num_src_bufs = 0, num_dst_bufs = 0;
 
+
+int queue_buffer(int type, int memory, int index, int len);
+int dequeue_output(int *n);
+int dequeue_capture(int *n, uint32_t *bytesused);
+
+
 int curr_buf = 0;
 int num_frames = 6;
 
@@ -207,73 +213,42 @@ static void gen_dst_buf(void *p, size_t size)
 
 static int read_frame(int last)
 {
-	struct v4l2_buffer buf;
 	int ret;
 	int j;
-	/// Not for us ... char * p_fb = fb_addr + fb_off;
 
-	memzero(buf);
+	int n, bytesused;
 
-	buf.type	= V4L2_BUF_TYPE_VIDEO_OUTPUT;
-	buf.memory	= V4L2_MEMORY_MMAP;
+	ret = dequeue_output(&n);
+	if (ret)
+		return ret;
 
-	ret = ioctl(vid_fd, VIDIOC_DQBUF, &buf);
-	debug("Dequeued source buffer, index: %d\n", buf.index);
-	if (ret) {
-		switch (errno) {
-		case EAGAIN:
-			debug("Got EAGAIN\n");
-			return 0;
-
-		case EIO:
-			debug("Got EIO\n");
-			return 0;
-
-		default:
-			perror("ioctl");
-			return 0;
-		}
-	}
 
 	/* Verify we've got a correct buffer */
-	assert(buf.index < num_src_bufs);
+	assert(n < num_src_bufs);
 
 	/* Enqueue back the buffer (note that the index is preserved) */
 	if (!last) {
-		gen_src_buf(p_src_buf[buf.index], src_buf_size[buf.index]);
-		buf.type	= V4L2_BUF_TYPE_VIDEO_OUTPUT;
-		buf.memory	= V4L2_MEMORY_MMAP;
-		buf.bytesused	= src_buf_size[buf.index];
-		ret = ioctl(vid_fd, VIDIOC_QBUF, &buf);
-		perror_ret(ret != 0, "ioctl");
+		gen_src_buf(p_src_buf[n], src_buf_size[n]);
+		queue_buffer(V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE, V4L2_MEMORY_MMAP,
+				n, src_buf_size[n]);
 
 		debug("Re-queueing Source buffer\n");
-		hexdump(p_src_buf[buf.index], 32, "SrcBuf:");
+		hexdump(p_src_buf[n], 32, "SrcBuf:");
 	}
 
-
-	buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 
 	debug("Dequeuing destination buffer\n");
-	ret = ioctl(vid_fd, VIDIOC_DQBUF, &buf);
-	if (ret) {
-		switch (errno) {
-		case EAGAIN:
-			debug("Got EAGAIN\n");
-			return 0;
+	ret = dequeue_capture(&n, &bytesused);
+	if (ret)
+		return ret;
 
-		case EIO:
-			debug("Got EIO\n");
-			return 0;
-
-		default:
-			perror("ioctl");
-			return 1;
-		}
+	if (bytesused == 0) {
+		printf("Capture finished 0 bytes used\n");
 	}
-	debug("Dequeued dst buffer, index: %d\n", buf.index);
+
+	debug("Dequeued dst buffer, index: %d\n", n);
 	/* Verify we've got a correct buffer */
-	assert(buf.index < num_dst_bufs);
+	assert(n < num_dst_bufs);
 
 	debug("Current buffer in the transaction: %d\n", curr_buf);
 	// NO FB OUT p_fb += curr_buf * (height / translen) * fb_line_w;
@@ -288,21 +263,95 @@ static int read_frame(int last)
 		p_fb += fb_line_w;
 	} No Display for us ... We'll just print stats of the buffer */
 
-	hexdump(p_dst_buf[buf.index], 32, "DstBuf:");
+	//debug("Buffer: %60s\n", p_dst_buf[buf.index]);
+	hexdump(p_dst_buf[n], 32, "DstBuf:");
 
-	debug("DstBuf[%d] CRC: 0x%x\n", buf.index,
-			crc8(0x00, p_dst_buf[buf.index],
-				   dst_buf_size[buf.index]) );
+	debug("DstBuf[%d] CRC: 0x%x\n", n,
+			crc8(0x00, p_dst_buf[n],
+				   dst_buf_size[n]) );
 
 
 	/* Enqueue back the buffer */
 	if (!last) {
-		gen_dst_buf(p_dst_buf[buf.index], dst_buf_size[buf.index]);
-		ret = ioctl(vid_fd, VIDIOC_QBUF, &buf);
-		perror_ret(ret != 0, "ioctl");
+		gen_dst_buf(p_dst_buf[n], dst_buf_size[n]);
+		queue_buffer(V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE, V4L2_MEMORY_MMAP,
+				n, dst_buf_size[n]);
+
 		debug("Enqueued back dst buffer\n");
 	}
 
+	return 0;
+}
+
+
+int queue_buffer(int type, int memory, int index, int len)
+{
+	/* Using the mplane API for single planes so far */
+	struct v4l2_buffer buf = { 0 };
+	struct v4l2_plane planes[1] = { 0 };
+	int ret;
+
+	fprintf(stderr, "QBUF type=%d idx=%d: size (%d) %m\n",
+			type, index, len);
+
+	buf.type	= type;
+	buf.memory	= memory;
+	buf.index	= index;
+	buf.m.planes 	= planes;
+	buf.length	= 1;
+
+	buf.m.planes[0].length = len;
+	buf.m.planes[0].bytesused = len;
+
+	ret = ioctl(vid_fd, VIDIOC_QBUF, &buf);
+	if (ret)
+		fprintf(stderr, "Failed to QBUF type=%d idx=%d: size (%d) %m\n",
+				type, index, len);
+
+	perror_exit(ret != 0, "ioctl");
+
+	return ret;
+}
+
+/* directly from m2mtest */
+int dequeue_output(int *n)
+{
+	struct v4l2_buffer qbuf = { 0, };
+	struct v4l2_plane planes[2] = { 0, };
+
+	qbuf.type = V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE;
+	qbuf.memory = V4L2_MEMORY_MMAP;
+	qbuf.m.planes = planes;
+	qbuf.length = 1;
+
+	if (ioctl(vid_fd, VIDIOC_DQBUF, &qbuf)) {
+		fprintf(stderr, "Output dequeue error: %m\n");
+		return -1;
+	}
+
+	printf("Dequeued output buffer %d\n", qbuf.index);
+	*n = qbuf.index;
+	return 0;
+}
+/* directly from m2mtest */
+int dequeue_capture(int *n, uint32_t *bytesused)
+{
+	struct v4l2_buffer qbuf = { 0, };
+	struct v4l2_plane planes[2] = { 0, };
+
+	qbuf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
+	qbuf.memory = V4L2_MEMORY_MMAP;
+	qbuf.m.planes = planes;
+	qbuf.length = 1;
+
+	if (ioctl(vid_fd, VIDIOC_DQBUF, &qbuf)) {
+		fprintf(stderr, "Capture dequeue error: %m\n");
+		return -1;
+	}
+
+	printf("Dequeued capture buffer %d, bytesused %d\n", qbuf.index, qbuf.m.planes[0].bytesused);
+	*n = qbuf.index;
+	*bytesused = qbuf.m.planes[0].bytesused;
 	return 0;
 }
 
@@ -372,8 +421,8 @@ int main(int argc, char ** argv)
 
 	memzero(reqbuf);
 	reqbuf.count	= NUM_BUFS;
-	reqbuf.type	= V4L2_BUF_TYPE_VIDEO_OUTPUT;
-	type		= V4L2_BUF_TYPE_VIDEO_OUTPUT;
+	reqbuf.type	= V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE;
+	type		= V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE;
 	reqbuf.memory	= V4L2_MEMORY_MMAP;
 	ret = ioctl(vid_fd, VIDIOC_REQBUFS, &reqbuf);
 	perror_exit(ret != 0, "ioctl");
@@ -381,41 +430,52 @@ int main(int argc, char ** argv)
 	debug("Got %d src buffers\n", num_src_bufs);
 
 	reqbuf.count	= NUM_BUFS;
-	reqbuf.type	= V4L2_BUF_TYPE_VIDEO_CAPTURE;
-	type		= V4L2_BUF_TYPE_VIDEO_CAPTURE;
+	reqbuf.type	= V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
+	type		= V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
 	ret = ioctl(vid_fd, VIDIOC_REQBUFS, &reqbuf);
 	perror_exit(ret != 0, "ioctl");
 	num_dst_bufs = reqbuf.count;
 	debug("Got %d dst buffers\n", num_dst_bufs);
 
 	for (i = 0; i < num_src_bufs; ++i) {
-		buf.type	= V4L2_BUF_TYPE_VIDEO_OUTPUT;
+		struct v4l2_plane planes[1];
+		buf = (struct v4l2_buffer){ 0, }; /* Zero the buffer */
+
+		buf.type	= V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE;
 		buf.memory	= V4L2_MEMORY_MMAP;
 		buf.index	= i;
+		buf.m.planes	= planes;
+		buf.length	= 1;
 
 		ret = ioctl(vid_fd, VIDIOC_QUERYBUF, &buf);
 		perror_exit(ret != 0, "ioctl");
-		debug("QUERYBUF returned offset: %x\n", buf.m.offset);
+		debug("QUERYBUF returned offset: %x : buf.length %d\n",
+				buf.m.planes[0].m.mem_offset, buf.m.planes[0].length);
 
-		src_buf_size[i] = buf.length;
-		p_src_buf[i] = mmap(NULL, buf.length,
-				    PROT_READ | PROT_WRITE, MAP_SHARED,
-				    vid_fd, buf.m.offset);
+		src_buf_size[i] = buf.m.planes[0].length;
+		p_src_buf[i] = mmap(NULL, buf.m.planes[0].length,
+				  PROT_READ | PROT_WRITE, MAP_SHARED, vid_fd,
+				  buf.m.planes[0].m.mem_offset);
+
 		perror_exit(MAP_FAILED == p_src_buf[i], "mmap");
 	}
 	for (i = 0; i < num_dst_bufs; ++i) {
-		buf.type	= V4L2_BUF_TYPE_VIDEO_CAPTURE;
+		struct v4l2_plane planes[1];
+		buf = (struct v4l2_buffer){ 0, }; /* Zero the buffer */
+		buf.type	= V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
 		buf.memory	= V4L2_MEMORY_MMAP;
 		buf.index	= i;
+		buf.m.planes	= planes;
+		buf.length	= 1;
 
 		ret = ioctl(vid_fd, VIDIOC_QUERYBUF, &buf);
 		perror_exit(ret != 0, "ioctl");
 		debug("QUERYBUF returned offset: %x\n", buf.m.offset);
 
-		dst_buf_size[i] = buf.length;
-		p_dst_buf[i] = mmap(NULL, buf.length,
-				    PROT_READ | PROT_WRITE, MAP_SHARED,
-				    vid_fd, buf.m.offset);
+		dst_buf_size[i] = buf.m.planes[0].length;
+		p_dst_buf[i] = mmap(NULL, buf.m.planes[0].length,
+				  PROT_READ | PROT_WRITE, MAP_SHARED, vid_fd,
+				  buf.m.planes[0].m.mem_offset);
 		perror_exit(MAP_FAILED == p_dst_buf[i], "mmap");
 	}
 
@@ -424,38 +484,31 @@ int main(int argc, char ** argv)
 
 		gen_src_buf(p_src_buf[i], src_buf_size[i]);
 
-		memzero(buf);
-		buf.type	= V4L2_BUF_TYPE_VIDEO_OUTPUT;
-		buf.memory	= V4L2_MEMORY_MMAP;
-		buf.index	= i;
+		ret = queue_buffer(V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE, V4L2_MEMORY_MMAP,
+				i, src_buf_size[i]);
 
-		ret = ioctl(vid_fd, VIDIOC_QBUF, &buf);
-		perror_exit(ret != 0, "ioctl");
-		debug("Queued OUTPUT buffer %d\n", buf.index);
+		debug("Queued OUTPUT buffer %d\n", i);
+
 		hexdump(p_src_buf[i], 32, "SrcBuf:");
 	}
 
 	/* Start stream for Output */
-	type = buf.type;
+	type = V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE;
 	ret = ioctl(vid_fd, VIDIOC_STREAMON, &type);
 	debug("STREAMON OUTPUT (%d): %d\n", VIDIOC_STREAMON, ret);
 	perror_exit(ret != 0, "ioctl streamon output");
 
 	/* Queue buffers for Capture */
 	for (i = 0; i < num_dst_bufs; ++i) {
-		memzero(buf);
-		buf.type	= V4L2_BUF_TYPE_VIDEO_CAPTURE;
-		buf.memory	= V4L2_MEMORY_MMAP;
-		buf.index	= i;
+		ret = queue_buffer(V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE, V4L2_MEMORY_MMAP,
+				i, dst_buf_size[i]);
 
-		ret = ioctl(vid_fd, VIDIOC_QBUF, &buf);
-		perror_exit(ret != 0, "ioctl");
-		debug("Queued CAPTURE buffer %d\n", buf.index);
+		debug("Queued CAPTURE buffer %d\n", i);
 		hexdump(p_dst_buf[i], 32, "DstBuf:");
 	}
 
 	/* Start Stream for Capture */
-	type = buf.type;
+	type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
 	ret = ioctl(vid_fd, VIDIOC_STREAMON, &type);
 	debug("STREAMON CAPTURE (%d): %d\n", VIDIOC_STREAMON, ret);
 	perror_exit(ret != 0, "ioctl streamon capture");
