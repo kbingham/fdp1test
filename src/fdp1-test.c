@@ -84,6 +84,8 @@ int dequeue_capture(int *n, uint32_t *bytesused);
 int curr_buf = 0;
 int num_frames = 6;
 
+int hex_not_draw = 0;
+
 #ifndef HEXDUMP_COLS
 #define HEXDUMP_COLS 8
 #endif
@@ -132,6 +134,33 @@ void hexdump(void *mem, unsigned int len, char * pfx)
                 }
         }
 }
+
+void draw_frame(void *mem, unsigned int lines, char * pfx)
+{
+	unsigned int i, j;
+	unsigned int len = lines * width;
+	char * pos = (char*)mem;
+
+	printf("%s pos =%x\n", pfx, pos);
+
+	for(i = 0; i < lines; i++)
+	{
+		for(j = 0; j < width; j++)
+		{
+			if(isprint(*pos)) /* printable char */
+			{
+				putchar(*pos);
+			}
+			else /* other char */
+			{
+				putchar('.');
+			}
+			pos++;
+		}
+		putchar('\n');
+	}
+}
+
 
 static void init_video_dev(void)
 {
@@ -245,7 +274,11 @@ static int read_frame(int last)
 				n, src_buf_size[n]);
 
 		debug("Re-queueing Source buffer\n");
-		hexdump(p_src_buf[n], 32, "SrcBuf:");
+		if (hex_not_draw)
+			hexdump(p_src_buf[n], 32, "SrcBuf:");
+		else
+			draw_frame(p_src_buf[n], 8, "SrcBuf:");
+
 	}
 
 
@@ -276,7 +309,10 @@ static int read_frame(int last)
 	} No Display for us ... We'll just print stats of the buffer */
 
 	//debug("Buffer: %60s\n", p_dst_buf[buf.index]);
-	hexdump(p_dst_buf[n], 32, "DstBuf:");
+	if (hex_not_draw)
+		hexdump(p_dst_buf[n], 32, "DstBuf:");
+	else
+		draw_frame(p_dst_buf[n], 8, "DstBuf:");
 
 	debug("DstBuf[%d] CRC: 0x%x\n", n,
 			crc8(0x00, p_dst_buf[n],
@@ -376,6 +412,7 @@ void help(char ** argv)
 	printf("--width/-w  :    Set width [%d]\n", width);
 	printf("--height/-h :    Set height [%d]\n", height);
 	printf("--num_frames/-n: Number of frames to process [%d]\n", num_frames);
+	printf("--hexdump/x :    Hexdump instead of draw\n");
 	printf("--help/-?   :    Display this help\n");
 
 	printf("\n");
@@ -391,11 +428,12 @@ int process_arguments(int argc, char ** argv)
 		{"height", 	required_argument,	0, 'h'},
 		{"help",  	no_argument, 		0, '?'},
 		{"num_frames",  required_argument,	0, 'n'},
+		{"hexdump",	no_argument,		0, 'x'},
 		{0, 0, 0, 0}
 	};
 
 	while ((option = getopt_long(argc, argv,
-			"w:h:n:?",
+			"w:h:n:x?",
 			long_options, NULL)) != -1) {
 
 		switch (option) {
@@ -408,13 +446,15 @@ int process_arguments(int argc, char ** argv)
 		case 'n':
 			num_frames = atoi(optarg);
 			break;
+		case 'x':
+			hex_not_draw = 1;
+			break;
 		default:
 		case '?':
 			help(argv);
 			exit(0);
 			break;
 		}
-
 	}
 	return 0;
 
@@ -506,7 +546,11 @@ int main(int argc, char ** argv)
 
 		debug("Queued OUTPUT buffer %d\n", i);
 
-		hexdump(p_src_buf[i], 32, "SrcBuf:");
+		if (hex_not_draw)
+			hexdump(p_src_buf[i], 32, "SrcBuf:");
+		else
+			draw_frame(p_src_buf[i], 8, "SrcBuf:");
+
 	}
 
 	/* Start stream for Output */
@@ -521,7 +565,11 @@ int main(int argc, char ** argv)
 				i, dst_buf_size[i]);
 
 		debug("Queued CAPTURE buffer %d\n", i);
-		hexdump(p_dst_buf[i], 32, "DstBuf:");
+		if (hex_not_draw)
+			hexdump(p_dst_buf[i], 32, "DstBuf:");
+		else
+			draw_frame(p_dst_buf[i], 8, "DstBuf:");
+
 	}
 
 	/* Start Stream for Capture */
