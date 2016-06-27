@@ -1,0 +1,12 @@
+#!/bin/sh
+
+CDATE=`date +%F`
+
+KERNEL_RELEASE=`uname -r`
+TAG=.$KERNEL_RELEASE
+
+OUTPUT=fdp1.$CDATE$TAG
+mkdir -p $OUTPUT
+
+v4l2-compliance -d 3 | tee -a "$OUTPUT/v4l2-compliance.log"
+echo "Report saved in $OUTPUT/v4l2-compliance.log"
