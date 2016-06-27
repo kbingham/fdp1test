@@ -1,0 +1,77 @@
+CDATE=`date +%F`
+
+OUTFMT=NV12
+
+# Width / height taken from media file
+
+# A POSIX variable
+OPTIND=1         # Reset in case getopts has been used previously in the shell.
+
+# Initialize our own variables:
+output_file=""
+verbose=0
+
+KERNEL_RELEASE=`uname -r`
+TAG=.$KERNEL_RELEASE
+
+while getopts "t:den:lvi:" opt; do
+    case "$opt" in
+    t)  TAG=.$OPTARG ;;
+    d)  DEBUG="GST_DEBUG=v4l2*:7,*CAPS*:5" ;;
+    e)	GST_EOS="-e" ;;
+    n)  NUM_BUFFERS="num-buffers=$OPTARG" ;;
+    l)  LOSSLESS="pass=quant quantizer=0 speed-preset=ultrafast byte-stream=true" ;;
+    v)  # Verbosity
+	verbose=1
+	GST_VERBOSE=-v
+ 	;;
+    i)
+	INPUT_FILE=$OPTARG
+	shift
+	;;
+    esac
+done
+
+shift $((OPTIND-1))
+
+[ "$1" = "--" ] && shift
+
+[ "$INPUT_FILE" = "" ] && INPUT_FILE="$1"
+
+OUTPUT=fdp1.$CDATE$TAG
+
+INPUT_FILE_BASE=$(basename "$INPUT_FILE")
+FILENAME="$INPUT_FILE_BASE.fdp1.mp4"
+
+if [ "$verbose" = "1" ]
+then
+  echo "Leftovers: $@"
+  echo "Output Dir: $OUTPUT"
+  echo "Input File: $INPUT_FILE ($INPUT_FILE_BASE)"
+  echo "Output File: $FILENAME"
+fi
+
+mkdir -p $OUTPUT
+
+echo "Output in $OUTPUT"
+
+GST_CMD="$DEBUG gst-launch-1.0 $GST_EOS $GST_VERBOSE --gst-debug-no-color \
+    filesrc location=\"$INPUT_FILE\" $NUM_BUFFERS \
+  ! decodebin \
+  ! v4l2video3convert \
+  ! queue \
+  ! video/x-raw,format=NV12 \
+  ! x264enc $LOSSLESS \
+  ! h264parse \
+  ! mp4mux \
+  ! progressreport name=\"$FILENAME\" \
+  ! filesink location=\"$OUTPUT/$FILENAME\" \
+"
+echo $GST_CMD | tee "$OUTPUT/$FILENAME.log"
+eval $GST_CMD 2>&1 | tee -a "$OUTPUT/$FILENAME.log"
+echo "Content saved as $OUTPUT/$FILENAME"
+echo "Log output in $OUTPUT/$FILENAME.log"
+ls -alh "$OUTPUT/$FILENAME"*
+
+
+exit
