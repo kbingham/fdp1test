@@ -155,7 +155,6 @@ static void init_video_dev(void)
 	fmt.type 		= V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE;
 	fmt.fmt.pix_mp.width	= width;
 	fmt.fmt.pix_mp.height	= height;
-	fmt.fmt.pix_mp.pixelformat = V4L2_PIX_FMT_YUV420M;
 	fmt.fmt.pix_mp.pixelformat = V4L2_PIX_FMT_YUYV; // Single Plane Used
 
 	fmt.fmt.pix_mp.field	= V4L2_FIELD_NONE;
@@ -174,6 +173,9 @@ static void init_video_dev(void)
 	fmt.fmt.pix_mp.width	= width;
 	fmt.fmt.pix_mp.height	= height;
 	fmt.fmt.pix_mp.pixelformat = V4L2_PIX_FMT_RGB565X;
+	//fmt.fmt.pix_mp.pixelformat = V4L2_PIX_FMT_YUV420M;
+	fmt.fmt.pix_mp.pixelformat = V4L2_PIX_FMT_UYVY; // Can see the chars move
+	fmt.fmt.pix_mp.pixelformat = V4L2_PIX_FMT_YUYV; // Single Plane Used
 
 	fmt.fmt.pix_mp.field	= V4L2_FIELD_NONE; // Do we need to set these?
 
