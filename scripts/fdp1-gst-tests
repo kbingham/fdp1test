@@ -1,0 +1,127 @@
+GENSCRIPT=$HOME/fdp1-gst-test
+
+CDATE=`date +%F`
+
+INFMTS_FULL="I420 NV12 NV16 NV21 NV61 UYVY"
+OUTFMTS_FULL="ARGB BGR BGRA BGRx I420 NV12 NV16 NV21 NV61 RGB RGB15 RGB16 UYVY xRGB"
+
+INFMTS_SHORT="I420 NV12"
+OUTFMTS_SHORT="ARGB UYVY"
+
+# Default the fmts to just one test
+INFMTS=NV12
+OUTFMTS=NV12
+
+# Default WxH
+W=1920
+H=1080
+
+# Default to Progressive Content
+IPC_MODE=progressive
+
+# Default number of buffers
+NUM_BUFFERS=60
+
+IFR=30000/1001
+
+PATTERN=smpte		# SMPTE 100% color bars
+# PATTERN=smpte75		# SMPTE 75% color bars
+# PATTERN=smpte100	# SMPTE 100% color bars
+# PATTERN=circular	# Circular
+# PATTERN=gamut		# Gamut checkers # 4 horizontal bars
+# PATTERN=ball		# Moving white ball
+# PATTERN=colors		# Boxes of colours everywhere...
+
+# A POSIX variable
+OPTIND=1         # Reset in case getopts has been used previously in the shell.
+
+# Initialize our own variables:
+output_file=""
+verbose=0
+
+KERNEL_RELEASE=`uname -r`
+TAG=.$KERNEL_RELEASE
+
+while getopts "w:h:ipt:delvsfn:" opt; do
+    case "$opt" in
+    w)  W=$OPTARG ;;
+    h)  H=$OPTARG ;;
+    i)  # Interlaced
+	IPC_MODE=interlace
+	IFR=60/1
+	NUM_BUFFERS=$((NUM_BUFFERS*2))
+	PATTERN=ball
+	GST_INTERLACE=" ! interlace field-pattern=0"
+	;;
+    p)  IPC_MODE=progressive ;;
+    t)  TAG=.$OPTARG ;;
+    d)  DEBUG="GST_DEBUG=v4l2*:7,*CAPS*:5" ;;
+    e)	GST_EOS="-e" ;;
+    l)  LOSSLESS="pass=quant quantizer=0 speed-preset=ultrafast byte-stream=true" ;;
+    v)  # Verbosity
+	verbose=1
+	GST_VERBOSE=-v
+ 	;;
+    s)  # Short Tests
+        INFMTS=$INFMTS_SHORT
+        OUTFMTS=$OUTFMTS_SHORT
+        ;;
+    f)  # Full tests
+        INFMTS=$INFMTS_FULL
+        OUTFMTS=$OUTFMTS_FULL
+        ;;
+    n)	NUM_BUFFERS=$OPTARG ;;
+    esac
+done
+
+shift $((OPTIND-1))
+
+[ "$1" = "--" ] && shift
+
+OUTPUT=fdp1.$CDATE$TAG
+
+if [ "$verbose" = "1" ]
+then
+  echo "Leftovers: $@"
+  echo $OUTPUT
+fi
+
+mkdir -p $OUTPUT
+cd $OUTPUT
+
+echo "Output in $(pwd)"
+
+
+run_test() {
+
+FILENAME=fdp1.$IPC_MODE.$PATTERN.$1-$2.$W.$H.mp4
+
+GST_CMD="$DEBUG gst-launch-1.0 $GST_EOS $GST_VERBOSE --gst-debug-no-color \
+  videotestsrc pattern=$PATTERN num-buffers=$NUM_BUFFERS \
+  ! video/x-raw,format=$INFMT,width=$W,height=$H,framerate=$IFR,interlace-mode=progressive \
+  $GST_INTERLACE \
+  ! v4l2video3convert \
+  ! queue \
+  ! video/x-raw,format=$OUTFMT,width=$W,height=$H,interlace-mode=progressive \
+  ! videoconvert \
+  ! queue \
+  ! video/x-raw,format=NV12,width=$W,height=$H,interlace-mode=progressive \
+  ! x264enc $LOSSLESS \
+  ! h264parse \
+  ! mp4mux \
+  ! filesink location=$FILENAME \
+"
+echo $GST_CMD | tee $FILENAME.log
+eval $GST_CMD 2>&1 | tee -a $FILENAME.log
+echo "Content saved as $OUTPUT/$FILENAME"
+echo "Log output in $OUTPUT/$FILENAME.log"
+ls -alh $FILENAME*
+}
+
+for INFMT in $INFMTS; do
+  for OUTFMT in $OUTFMTS; do
+    run_test $INFMT $OUTFMT;
+  done
+done;
+
+exit
