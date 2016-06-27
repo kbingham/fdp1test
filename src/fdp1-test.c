@@ -68,8 +68,8 @@
 #endif
 
 /* Globals to make non-global? */
-int width = 640;
-int height = 480;
+int width = 128;
+int height = 80;
 static int vid_fd;
 static char *p_src_buf[NUM_BUFS], *p_dst_buf[NUM_BUFS];
 static size_t src_buf_size[NUM_BUFS], dst_buf_size[NUM_BUFS];
