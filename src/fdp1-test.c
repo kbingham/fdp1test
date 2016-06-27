@@ -375,6 +375,7 @@ void help(char ** argv)
 	printf("%s: \n", appname);
 	printf("--width/-w  :    Set width [%d]\n", width);
 	printf("--height/-h :    Set height [%d]\n", height);
+	printf("--num_frames/-n: Number of frames to process [%d]\n", num_frames);
 	printf("--help/-?   :    Display this help\n");
 
 	printf("\n");
@@ -389,11 +390,12 @@ int process_arguments(int argc, char ** argv)
 		{"width",	required_argument,	0, 'w'},
 		{"height", 	required_argument,	0, 'h'},
 		{"help",  	no_argument, 		0, '?'},
+		{"num_frames",  required_argument,	0, 'n'},
 		{0, 0, 0, 0}
 	};
 
 	while ((option = getopt_long(argc, argv,
-			"w:h:?",
+			"w:h:n:?",
 			long_options, NULL)) != -1) {
 
 		switch (option) {
@@ -402,6 +404,9 @@ int process_arguments(int argc, char ** argv)
 			break;
 		case 'h':
 			height = atoi(optarg);
+			break;
+		case 'n':
+			num_frames = atoi(optarg);
 			break;
 		default:
 		case '?':
