@@ -259,4 +259,93 @@ void fdp1_v4l2_free_buffers(struct fdp1_v4l2_buffer_pool * pool)
 	free(pool);
 }
 
+static int fdp1_set_input_output_formats(struct fdp1_context * fdp1,
+		struct fdp1_v4l2_dev * dev,
+		uint32_t out_fourcc,
+		uint32_t cap_fourcc)
+{
+	uint32_t fail = 0;
 
+	fail += fdp1_v4l2_set_fmt(fdp1, dev, V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE,
+			fdp1->width, fdp1->height,
+			out_fourcc, V4L2_FIELD_NONE);
+
+	fail += fdp1_v4l2_set_fmt(fdp1, dev, V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE,
+			fdp1->width, fdp1->height,
+			cap_fourcc, V4L2_FIELD_NONE);
+
+	kprint(fdp1, 2, "Format set to 0x%x:0x%x for test (fail=%d)\n",
+			out_fourcc, cap_fourcc, fail);
+
+	return fail;
+}
+
+struct fdp1_m2m *
+fdp1_create_m2m(struct fdp1_context * fdp1,
+		uint32_t out_fourcc,
+		uint32_t cap_fourcc)
+{
+	int ret;
+	int fail = 0;
+	enum test_result result;
+	struct fdp1_v4l2_buffer_pool * src_bufs;
+	struct fdp1_v4l2_buffer_pool * dst_bufs;
+
+	kprint(fdp1, 2, "0x%x 0x%x\n", out_fourcc, cap_fourcc);
+
+	struct fdp1_m2m * m2m = calloc(1, sizeof(struct fdp1_m2m));
+	if (!m2m) {
+		perror("M2M Ctx Allocation");
+		return NULL;
+	}
+
+	m2m->dev = fdp1_v4l2_open(fdp1);
+
+	if (!m2m->dev) {
+		free(m2m);
+		return NULL;
+	}
+
+	fail = fdp1_set_input_output_formats(fdp1, m2m->dev,
+			out_fourcc, cap_fourcc);
+
+	if (fail) {
+		/* We need to know our starting condition for the rest of the tests here */
+		kprint(fdp1, 0, "Failed to set formats for M2M\n");
+		fdp1_free_m2m(m2m);
+		return NULL;
+	}
+
+	m2m->src_bufs = fdp1_v4l2_allocate_buffers(fdp1, m2m->dev,
+			V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE, 4);
+	if (!m2m->src_bufs) {
+		kprint(fdp1, 0, "Failed to create a src_buf pool\n");
+		fail++;
+	}
+
+	m2m->dst_bufs = fdp1_v4l2_allocate_buffers(fdp1, m2m->dev,
+			V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE, 4);
+	if (!m2m->dst_bufs) {
+		kprint(fdp1, 0, "Failed to create a dst_buf pool\n");
+		fail++;
+	}
+
+	if (fail) {
+		fdp1_free_m2m(m2m);
+		return NULL;
+	}
+
+	return m2m;
+}
+
+void fdp1_free_m2m(struct fdp1_m2m * m2m)
+{
+	if (!m2m)
+		return;
+
+	/* Clean Up */
+	fdp1_v4l2_free_buffers(m2m->src_bufs);
+	fdp1_v4l2_free_buffers(m2m->dst_bufs);
+	fdp1_v4l2_close(m2m->dev);
+	free(m2m);
+}

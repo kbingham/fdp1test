@@ -35,6 +35,13 @@ struct fdp1_v4l2_buffer_pool {
 	struct fdp1_v4l2_buffer buffer[MAX_BUFFER_POOL_SIZE];
 };
 
+struct fdp1_m2m {
+	struct fdp1_v4l2_dev * dev;
+	struct fdp1_v4l2_buffer_pool * src_bufs;
+	struct fdp1_v4l2_buffer_pool * dst_bufs;
+};
+
+
 void start_test(struct fdp1_context * fdp1, char * test);
 struct fdp1_v4l2_dev * fdp1_v4l2_open(struct fdp1_context * fdp1);
 int fdp1_v4l2_close(struct fdp1_v4l2_dev * dev);
@@ -54,5 +61,12 @@ fdp1_v4l2_allocate_buffers(struct fdp1_context * fdp1,
 			   uint32_t buffers_requested);
 
 void fdp1_v4l2_free_buffers(struct fdp1_v4l2_buffer_pool * pool);
+
+struct fdp1_m2m *
+fdp1_create_m2m(struct fdp1_context * fdp1,
+		uint32_t out_fourcc,
+		uint32_t cap_fourcc);
+
+void fdp1_free_m2m(struct fdp1_m2m * m2m);
 
 #endif /* _FDP1_V4L2_HELPERS_H_ */
