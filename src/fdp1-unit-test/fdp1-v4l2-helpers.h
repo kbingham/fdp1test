@@ -26,4 +26,12 @@ void start_test(struct fdp1_context * fdp1, char * test);
 struct fdp1_v4l2_dev * fdp1_v4l2_open(struct fdp1_context * fdp1);
 int fdp1_v4l2_close(struct fdp1_v4l2_dev * dev);
 
+int fdp1_v4l2_set_fmt(struct fdp1_context * fdp1,
+		      struct fdp1_v4l2_dev * v4l2_dev,
+		      uint32_t type,
+		      uint32_t width,
+		      uint32_t height,
+		      uint32_t fourcc,
+		      uint32_t field);
+
 #endif /* _FDP1_V4L2_HELPERS_H_ */

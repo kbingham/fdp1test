@@ -28,6 +28,46 @@ static int fdp1_open_close(struct fdp1_context * fdp1)
 	return fdp1_v4l2_close(dev);
 }
 
+static int fdp1_format_tests(struct fdp1_context * fdp1)
+{
+	int ret;
+	int fail = 0;
+	enum test_result result;
+
+	start_test(fdp1, "Format Tests");
+
+	struct fdp1_v4l2_dev * dev = fdp1_v4l2_open(fdp1);
+
+	if (!dev)
+		return TEST_FAIL;
+
+	/* Expected pass */
+
+	fail += fdp1_v4l2_set_fmt(fdp1, dev, V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE,
+			fdp1->width, fdp1->height,
+			V4L2_PIX_FMT_YUYV, V4L2_FIELD_INTERLACED);
+
+	fail += fdp1_v4l2_set_fmt(fdp1, dev, V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE,
+			fdp1->width, fdp1->height,
+			V4L2_PIX_FMT_NV12M, V4L2_FIELD_INTERLACED);
+
+	fail += fdp1_v4l2_set_fmt(fdp1, dev, V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE,
+			fdp1->width, fdp1->height,
+			V4L2_PIX_FMT_YUV420M, V4L2_FIELD_INTERLACED);
+
+	/* Expected fail */
+
+	result = fdp1_v4l2_set_fmt(fdp1, dev, V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE,
+			fdp1->width, fdp1->height,
+			V4L2_PIX_FMT_ARGB32, V4L2_FIELD_INTERLACED);
+
+	if (result == TEST_PASS)
+		fail++;
+
+	fdp1_v4l2_close(dev);
+
+	return fail;
+}
 
 int fdp1_open_tests(struct fdp1_context * fdp1)
 {
@@ -35,6 +75,8 @@ int fdp1_open_tests(struct fdp1_context * fdp1)
 
 	/* Simple open then close test */
 	fail += fdp1_open_close(fdp1);
+	/* Try out some formats */
+	fail += fdp1_format_tests(fdp1);
 
 	return fail;
 }

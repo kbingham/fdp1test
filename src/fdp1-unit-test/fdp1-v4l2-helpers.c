@@ -84,3 +84,37 @@ int fdp1_v4l2_close(struct fdp1_v4l2_dev * v4l2_dev)
 
 	return 0;
 }
+
+int fdp1_v4l2_set_fmt(struct fdp1_context * fdp1,
+			struct fdp1_v4l2_dev * v4l2_dev,
+			uint32_t type,
+			uint32_t width,
+			uint32_t height,
+			uint32_t fourcc,
+			uint32_t field)
+{
+	struct v4l2_format fmt;
+	int ret;
+
+	/* The data we send to the device/driver */
+	fmt.type			= type;
+	fmt.fmt.pix_mp.width		= width;
+	fmt.fmt.pix_mp.height		= height;
+	fmt.fmt.pix_mp.pixelformat	= fourcc;
+	fmt.fmt.pix_mp.field		= field;
+
+	ret = ioctl(v4l2_dev->fd, VIDIOC_S_FMT, &fmt);
+	if (ret < 0) {
+		fprintf(stderr, "Format not set\n");
+		perror("VIDIOC_S_FMT");
+		return TEST_FAIL;
+	}
+
+	if (fmt.fmt.pix_mp.pixelformat != fourcc) {
+		fprintf(stderr, "Format changed\n");
+		return TEST_FAIL;
+	}
+
+	return 0;
+}
+
