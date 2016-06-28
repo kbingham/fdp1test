@@ -12,16 +12,7 @@
  * option) any later version
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <assert.h>
-#include <ctype.h>
-#include <getopt.h>
-#include <stdint.h>
-#include <stdbool.h>
-#include <unistd.h>
-#include <errno.h>
+
 
 #include <sys/ioctl.h>
 #include <sys/prctl.h>
@@ -75,7 +66,7 @@ int process_arguments(int argc, char ** argv, struct fdp1_context * fdp1)
 	};
 
 	while ((option = getopt_long(argc, argv,
-			"d:w:h:n:x?",
+			"d:w:h:n:xv?",
 			long_options, NULL)) != -1) {
 
 		switch (option) {
@@ -118,6 +109,7 @@ int main(int argc, char ** argv)
 	process_arguments(argc, argv, &fdp1_ctx);
 
 	/* Ideally these would be automatically iterated */
+	fail += fdp1_open_tests(&fdp1_ctx);
 
 	printf("%s: Test results: %d tests failed\n", fdp1_ctx.appname, fail);
 }
