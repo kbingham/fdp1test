@@ -15,6 +15,7 @@
 #include <ctype.h>
 #include <getopt.h>
 #include <stdint.h>
+#include <inttypes.h>
 #include <stdbool.h>
 #include <unistd.h>
 #include <errno.h>
@@ -37,8 +38,8 @@ void start_test(struct fdp1_context * fdp1, char * test)
 
 struct fdp1_v4l2_dev * fdp1_v4l2_open(struct fdp1_context * fdp1)
 {
+	int ret;
 	char devname[] = "/dev/videoNNNNNNN";
-
 	struct fdp1_v4l2_dev * v4l2_dev = malloc(sizeof(struct fdp1_v4l2_dev));
 
 	if (!v4l2_dev)
@@ -53,6 +54,20 @@ struct fdp1_v4l2_dev * fdp1_v4l2_open(struct fdp1_context * fdp1)
 		fprintf(stderr, "%s:%d: failed to open %s", __func__, __LINE__, devname);\
 		perror("open");
 		free(v4l2_dev);
+		return 0;
+	}
+
+	ret = ioctl(v4l2_dev->fd, VIDIOC_QUERYCAP, &v4l2_dev->cap);
+	if (ret < 0) {
+		fprintf(stderr, "%s:%d: failed to query cap %s", __func__, __LINE__, devname);\
+		perror("VIDIOC_QUERYCAP");
+		fdp1_v4l2_close(v4l2_dev);
+		return 0;
+	}
+
+	if (!(v4l2_dev->cap.capabilities & V4L2_CAP_VIDEO_M2M_MPLANE)) {
+		fprintf(stderr, "Device does not support V4L2_CAP_VIDEO_M2M_MPLANE\n");
+		fdp1_v4l2_close(v4l2_dev);
 		return 0;
 	}
 
