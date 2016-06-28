@@ -38,6 +38,10 @@ struct fdp1_context {
 };
 
 int fdp1_open_tests(struct fdp1_context * fdp1);
+int fdp1_allocation_tests(struct fdp1_context * fdp1);
+
+#define memzero(x)\
+	memset(&(x), 0, sizeof (x));
 
 /* It's like printk ... but better */
 #define kprint(fdp1, level, fmt, args...) \

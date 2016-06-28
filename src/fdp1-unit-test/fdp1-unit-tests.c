@@ -110,6 +110,7 @@ int main(int argc, char ** argv)
 
 	/* Ideally these would be automatically iterated */
 	fail += fdp1_open_tests(&fdp1_ctx);
+	fail += fdp1_allocation_tests(&fdp1_ctx);
 
 	printf("%s: Test results: %d tests failed\n", fdp1_ctx.appname, fail);
 }
