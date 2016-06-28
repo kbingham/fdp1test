@@ -25,5 +25,5 @@ AC_C_BIGENDIAN
 
 # Checks for library functions.
 
-AC_CONFIG_FILES([Makefile src/Makefile scripts/Makefile])
+AC_CONFIG_FILES([Makefile src/Makefile src/fdp1-unit-test/Makefile scripts/Makefile])
 AC_OUTPUT

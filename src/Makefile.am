@@ -1,3 +1,5 @@
+SUBDIRS = fdp1-unit-test
+
 bin_PROGRAMS = fdp1-test process-vmalloc
 
 
