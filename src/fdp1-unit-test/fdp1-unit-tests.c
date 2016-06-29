@@ -33,6 +33,7 @@ static struct fdp1_context fdp1_ctx = {
 	.height = 80,
 	.num_frames = 30,
 	.verbose = false,
+	.interlaced_tests = 0,
 };
 
 void help(char ** argv, struct fdp1_context * fdp1)
@@ -62,11 +63,12 @@ int process_arguments(int argc, char ** argv, struct fdp1_context * fdp1)
 		{"num_frames",  required_argument,	0, 'n'},
 		{"hexdump",	no_argument,		0, 'x'},
 		{"verbose",	no_argument,		0, 'v'},
+		{"interlaced",	no_argument,		0, 'i'},
 		{0, 0, 0, 0}
 	};
 
 	while ((option = getopt_long(argc, argv,
-			"d:w:h:n:xv?",
+			"d:w:h:n:xvi?",
 			long_options, NULL)) != -1) {
 
 		switch (option) {
@@ -87,6 +89,9 @@ int process_arguments(int argc, char ** argv, struct fdp1_context * fdp1)
 			break;
 		case 'v':
 			fdp1->verbose++;
+			break;
+		case 'i':
+			fdp1->interlaced_tests = 1;
 			break;
 		default:
 		case '?':
@@ -109,11 +114,14 @@ int main(int argc, char ** argv)
 	process_arguments(argc, argv, &fdp1_ctx);
 
 	/* Ideally these would be automatically iterated */
-	fail += fdp1_open_tests(&fdp1_ctx);
-	fail += fdp1_allocation_tests(&fdp1_ctx);
-	fail += fdp1_stream_on_tests(&fdp1_ctx);
-	fail += fdp1_progressive(&fdp1_ctx);
-	fail += fdp1_interlaced(&fdp1_ctx);
+	if (fdp1_ctx.interlaced_tests) {
+		fail += fdp1_deinterlace(&fdp1_ctx);
+	} else {
+		fail += fdp1_open_tests(&fdp1_ctx);
+		fail += fdp1_allocation_tests(&fdp1_ctx);
+		fail += fdp1_stream_on_tests(&fdp1_ctx);
+		fail += fdp1_progressive(&fdp1_ctx);
+	}
 
 	printf("%s: Test results: %d tests failed\n", fdp1_ctx.appname, fail);
 }

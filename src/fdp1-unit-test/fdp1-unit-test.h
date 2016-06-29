@@ -35,6 +35,7 @@ struct fdp1_context {
 	int num_frames;
 	int hex_not_draw;
 	int verbose;
+	int interlaced_tests;
 };
 
 int fdp1_open_tests(struct fdp1_context * fdp1);
