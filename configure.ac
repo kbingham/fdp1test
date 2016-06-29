@@ -7,7 +7,7 @@ AC_INIT([main],[1.0.0],[kieran@bingham.xyz])
 AC_CONFIG_AUX_DIR([build-aux])
 AM_INIT_AUTOMAKE([-Wall -Werror subdir-objects])
 AC_CONFIG_HEADERS([config.h])
-AC_CONFIG_SRCDIR([src/main.c])
+AC_CONFIG_SRCDIR([src/fdp1-test.c])
 AC_CONFIG_MACRO_DIR([m4])
 
 # Checks for programs.
