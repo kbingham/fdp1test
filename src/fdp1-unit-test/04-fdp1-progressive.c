@@ -93,7 +93,7 @@ static int fdp1_run_progressive_frames(struct fdp1_context * fdp1)
 	int type;
 	int num_frames;
 
-	start_test(fdp1, "Stream Test");
+	start_test(fdp1, "Progressive Stream Test");
 
 	m2m = fdp1_create_m2m(fdp1, V4L2_PIX_FMT_YUYV, V4L2_FIELD_NONE,
 			V4L2_PIX_FMT_YUYV);
