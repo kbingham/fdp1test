@@ -289,8 +289,37 @@ int fdp1_v4l2_queue_buffer(struct fdp1_v4l2_dev * dev,
 		perror("VIDIOC_QBUF");
 	}
 
-
 	return ret;
+}
+
+struct fdp1_v4l2_buffer *
+fdp1_v4l2_dequeue_buffer(struct fdp1_v4l2_dev * dev, struct fdp1_v4l2_queue * queue)
+{
+	struct v4l2_buffer qbuf = { 0, };
+	struct v4l2_plane planes[2] = { 0, };
+	struct fdp1_v4l2_buffer * buffer;
+
+	qbuf.type = queue->type;
+	qbuf.memory = V4L2_MEMORY_MMAP;
+	qbuf.m.planes = planes;
+	/* Only single planes supported so far */
+	qbuf.length = 1;
+
+	if (ioctl(dev->fd, VIDIOC_DQBUF, &qbuf)) {
+		fprintf(stderr, "Output dequeue error: %m\n");
+		perror("VIDIOC_DQBUF");
+		return NULL;
+	}
+
+	if (qbuf.index >= queue->pool->qty) {
+		fprintf(stderr, "Buffer index not in pool %d %d\n",qbuf.index, queue->type);
+		return NULL;
+	}
+
+	buffer = &queue->pool->buffer[qbuf.index];
+	buffer->bytesused = qbuf.m.planes[0].bytesused;
+
+	return buffer;
 }
 
 int fdp1_v4l2_buffer_pool_queue(struct fdp1_v4l2_dev * dev,
@@ -405,5 +434,17 @@ int fdp1_m2m_stream_on(struct fdp1_m2m * m2m, int type)
 	}
 
 	return fail;
+}
+
+struct fdp1_v4l2_buffer *
+fdp1_m2m_dequeue_output(struct fdp1_m2m * m2m)
+{
+	return fdp1_v4l2_dequeue_buffer(m2m->dev, &m2m->src_queue);
+}
+
+struct fdp1_v4l2_buffer *
+fdp1_m2m_dequeue_capture(struct fdp1_m2m * m2m)
+{
+	return fdp1_v4l2_dequeue_buffer(m2m->dev, &m2m->dst_queue);
 }
 

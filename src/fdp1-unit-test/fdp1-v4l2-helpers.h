@@ -29,6 +29,7 @@ struct fdp1_v4l2_buffer {
 	char * mem[3];
 	unsigned int type;
 	unsigned int index;
+	unsigned int bytesused;
 };
 
 #define MAX_BUFFER_POOL_SIZE 4
@@ -73,6 +74,10 @@ void fdp1_v4l2_free_buffers(struct fdp1_v4l2_buffer_pool * pool);
 int fdp1_v4l2_queue_buffer(struct fdp1_v4l2_dev * dev,
 		struct fdp1_v4l2_buffer * buffer);
 
+struct fdp1_v4l2_buffer *
+fdp1_v4l2_dequeue_buffer(struct fdp1_v4l2_dev * dev,
+			 struct fdp1_v4l2_queue * queue);
+
 int fdp1_v4l2_buffer_pool_queue(struct fdp1_v4l2_dev * dev,
 		struct fdp1_v4l2_buffer_pool * pool, unsigned int i);
 
@@ -84,5 +89,11 @@ fdp1_create_m2m(struct fdp1_context * fdp1,
 void fdp1_free_m2m(struct fdp1_m2m * m2m);
 
 int fdp1_m2m_stream_on(struct fdp1_m2m * m2m, int type);
+
+struct fdp1_v4l2_buffer *
+fdp1_m2m_dequeue_output(struct fdp1_m2m * m2m);
+
+struct fdp1_v4l2_buffer *
+fdp1_m2m_dequeue_capture(struct fdp1_m2m * m2m);
 
 #endif /* _FDP1_V4L2_HELPERS_H_ */
