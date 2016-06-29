@@ -159,28 +159,29 @@ int fdp1_v4l2_query_buffer(struct fdp1_context * fdp1,
 	struct v4l2_buffer buf;
 	buf = (struct v4l2_buffer){ 0, }; /* Zero the buffer */
 
-	buf.type	= type;
-	buf.memory	= V4L2_MEMORY_MMAP;
-	buf.index	= idx;
-	buf.m.planes	= fdp1_buf->planes;
-	buf.length	= 1; /* Only one plane ATM */
+	fdp1_buf->v4l2_buf.type		= type;
+	fdp1_buf->v4l2_buf.memory	= V4L2_MEMORY_MMAP;
+	fdp1_buf->v4l2_buf.index	= idx;
+	fdp1_buf->v4l2_buf.m.planes	= fdp1_buf->planes;
+	fdp1_buf->v4l2_buf.length	= 1; /* Only one plane ATM */
 
-	ret = ioctl(v4l2_dev->fd, VIDIOC_QUERYBUF, &buf);
+	ret = ioctl(v4l2_dev->fd, VIDIOC_QUERYBUF, &fdp1_buf->v4l2_buf);
 	if (ret != 0) {
 		perror("ioctl VIDIOC_QUERYBUF");
 		return ret;
 	}
 
 	kprint(fdp1, 2, "QUERYBUF returned offset: %x : buf.length %d\n",
-			buf.m.planes[0].m.mem_offset, buf.m.planes[0].length);
+			fdp1_buf->v4l2_buf.m.planes[0].m.mem_offset,
+			fdp1_buf->v4l2_buf.m.planes[0].length);
 
-	fdp1_buf->n_planes = buf.length;
+	fdp1_buf->n_planes = fdp1_buf->v4l2_buf.length;
 
 	for (i = 0; i < fdp1_buf->n_planes; i++) {
-		fdp1_buf->sizes[i] = buf.m.planes[i].length;
-		fdp1_buf->mem[i] = mmap(NULL, buf.m.planes[i].length,
+		fdp1_buf->sizes[i] = fdp1_buf->v4l2_buf.m.planes[i].length;
+		fdp1_buf->mem[i] = mmap(NULL, fdp1_buf->v4l2_buf.m.planes[i].length,
 			  PROT_READ | PROT_WRITE, MAP_SHARED, v4l2_dev->fd,
-			  buf.m.planes[i].m.mem_offset);
+			  fdp1_buf->v4l2_buf.m.planes[i].m.mem_offset);
 
 		if (fdp1_buf->mem[i] == MAP_FAILED) {
 			kprint(fdp1, 1, "Failed to mmap plane %d\n", i);
@@ -188,8 +189,6 @@ int fdp1_v4l2_query_buffer(struct fdp1_context * fdp1,
 			fail++;
 		}
 	}
-
-	/* Should probably unmmap here */
 
 	return fail;
 }
@@ -275,6 +274,7 @@ int fdp1_v4l2_queue_buffer(struct fdp1_v4l2_dev * dev,
 	buf.type	= buffer->type;
 	buf.memory	= V4L2_MEMORY_MMAP;
 	buf.index	= buffer->index;
+	buf.field	= buffer->v4l2_buf.field;
 	buf.m.planes 	= planes;
 	buf.length	= 1;
 

@@ -30,6 +30,7 @@ struct fdp1_v4l2_buffer {
 	unsigned int type;
 	unsigned int index;
 	unsigned int bytesused;
+	struct v4l2_buffer v4l2_buf;
 };
 
 #define MAX_BUFFER_POOL_SIZE 4
