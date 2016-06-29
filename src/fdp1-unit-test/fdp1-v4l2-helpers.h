@@ -14,6 +14,17 @@
 #ifndef _FDP1_V4L2_HELPERS_H_
 #define _FDP1_V4L2_HELPERS_H_
 
+#define V4L2_CID_DEINT_MODE		(V4L2_CID_USER_BASE + 0x1000)
+
+enum fdp1_deint_mode {
+	FDP1_PROGRESSIVE = 0, /* Must be zero when !deinterlacing */
+	FDP1_ADAPT2D3D,
+	FDP1_FIXED2D,
+	FDP1_FIXED3D,
+	FDP1_PREVFIELD,
+	FDP1_NEXTFIELD,
+};
+
 struct fdp1_v4l2_dev {
 	int fd;
 
@@ -97,5 +108,8 @@ fdp1_m2m_dequeue_output(struct fdp1_m2m * m2m);
 
 struct fdp1_v4l2_buffer *
 fdp1_m2m_dequeue_capture(struct fdp1_m2m * m2m);
+
+int fdp1_m2m_set_ctrl(struct fdp1_m2m * m2m, uint32_t ctrl_id, int32_t val);
+int fdp1_m2m_get_ctrl(struct fdp1_m2m * m2m, uint32_t ctrl_id, int32_t *val);
 
 #endif /* _FDP1_V4L2_HELPERS_H_ */

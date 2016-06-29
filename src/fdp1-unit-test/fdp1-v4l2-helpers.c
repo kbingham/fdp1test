@@ -450,3 +450,40 @@ fdp1_m2m_dequeue_capture(struct fdp1_m2m * m2m)
 	return fdp1_v4l2_dequeue_buffer(m2m->dev, &m2m->dst_queue);
 }
 
+int fdp1_m2m_set_ctrl(struct fdp1_m2m * m2m, uint32_t ctrl_id, int32_t val)
+{
+	int fail = 0;
+	int ret;
+	struct v4l2_control ctrl;
+
+	ctrl.id = ctrl_id;
+	ctrl.value = val;
+
+	ret = ioctl(m2m->dev->fd, VIDIOC_S_CTRL, &ctrl);
+	if (ret != 0) {
+		perror("VIDIOC_G_CTRL");
+		return ret;
+	}
+
+	return 0;
+}
+
+int fdp1_m2m_get_ctrl(struct fdp1_m2m * m2m, uint32_t ctrl_id, int32_t *val)
+{
+	int fail = 0;
+	int ret;
+	struct v4l2_control ctrl;
+
+	ctrl.id = ctrl_id;
+
+	ret = ioctl(m2m->dev->fd, VIDIOC_G_CTRL, &ctrl);
+	if (ret != 0) {
+		perror("VIDIOC_G_CTRL");
+		return ret;
+	}
+
+	*val = ctrl.value;
+
+	return 0;
+}
+
