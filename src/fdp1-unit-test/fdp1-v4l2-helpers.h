@@ -84,6 +84,7 @@ struct fdp1_v4l2_buffer_pool *
 fdp1_v4l2_allocate_buffers(struct fdp1_context * fdp1,
 			   struct fdp1_v4l2_dev * v4l2_dev,
 			   uint32_t type,
+			   enum v4l2_field field,
 			   uint32_t buffers_requested);
 
 void fdp1_v4l2_free_buffers(struct fdp1_v4l2_buffer_pool * pool);

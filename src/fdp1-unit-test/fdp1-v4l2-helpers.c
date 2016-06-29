@@ -179,8 +179,8 @@ int fdp1_v4l2_query_buffer(struct fdp1_context * fdp1,
 	int i;
 	int fail = 0;
 	int ret;
-	struct v4l2_buffer buf;
-	buf = (struct v4l2_buffer){ 0, }; /* Zero the buffer */
+
+	memzero(*fdp1_buf);
 
 	fdp1_buf->v4l2_buf.type		= type;
 	fdp1_buf->v4l2_buf.memory	= V4L2_MEMORY_MMAP;
@@ -194,9 +194,10 @@ int fdp1_v4l2_query_buffer(struct fdp1_context * fdp1,
 		return ret;
 	}
 
-	kprint(fdp1, 2, "QUERYBUF returned offset: %x : buf.length %d\n",
+	kprint(fdp1, 2, "QUERYBUF returned offset: %x : buf.length %d %s\n",
 			fdp1_buf->v4l2_buf.m.planes[0].m.mem_offset,
-			fdp1_buf->v4l2_buf.m.planes[0].length);
+			fdp1_buf->v4l2_buf.m.planes[0].length,
+			v4l2_field(fdp1_buf->v4l2_buf.field));
 
 	fdp1_buf->n_planes = fdp1_buf->v4l2_buf.length;
 
@@ -226,6 +227,7 @@ struct fdp1_v4l2_buffer_pool *
 fdp1_v4l2_allocate_buffers(struct fdp1_context * fdp1,
 			struct fdp1_v4l2_dev * v4l2_dev,
 			uint32_t type,
+			enum v4l2_field field,
 			uint32_t buffers_requested)
 {
 	uint32_t qty;
@@ -255,6 +257,7 @@ fdp1_v4l2_allocate_buffers(struct fdp1_context * fdp1,
 				&pool->buffer[i], type, i);
 		pool->buffer[i].type = type;
 		pool->buffer[i].index = i;
+		pool->buffer[i].v4l2_buf.field = field;
 	}
 
 	if (fail) {
@@ -291,8 +294,9 @@ int fdp1_v4l2_queue_buffer(struct fdp1_v4l2_dev * dev,
 	struct v4l2_plane planes[1] = { 0 };
 	int ret;
 
-	fprintf(stderr, "QBUF type=%d idx=%d: size (%d) %m\n",
-			buffer->type, buffer->index, buffer->sizes[0]);
+	fprintf(stderr, "QBUF type=%d idx=%d: size (%d) %s %m\n",
+			buffer->type, buffer->index, buffer->sizes[0],
+			v4l2_field(buffer->v4l2_buf.field));
 
 	buf.type	= buffer->type;
 	buf.memory	= V4L2_MEMORY_MMAP;
@@ -415,7 +419,7 @@ fdp1_create_m2m(struct fdp1_context * fdp1,
 	/* This should be wrapped in a 'create-queue' later */
 	m2m->src_queue.type = V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE;
 	m2m->src_queue.pool = fdp1_v4l2_allocate_buffers(fdp1, m2m->dev,
-			V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE, 4);
+			V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE, out_field, 4);
 	if (!m2m->src_queue.pool) {
 		kprint(fdp1, 0, "Failed to create a src_buf pool\n");
 		fail++;
@@ -423,7 +427,7 @@ fdp1_create_m2m(struct fdp1_context * fdp1,
 
 	m2m->dst_queue.type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
 	m2m->dst_queue.pool = fdp1_v4l2_allocate_buffers(fdp1, m2m->dev,
-			V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE, 4);
+			V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE, V4L2_FIELD_NONE, 4);
 	if (!m2m->dst_queue.pool) {
 		kprint(fdp1, 0, "Failed to create a dst_buf pool\n");
 		fail++;

@@ -59,14 +59,14 @@ static int fdp1_pool_allocation_test(struct fdp1_context * fdp1)
 	}
 
 	src_bufs = fdp1_v4l2_allocate_buffers(fdp1, dev,
-			V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE, 4);
+			V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE, V4L2_FIELD_NONE, 4);
 	if (!src_bufs) {
 		kprint(fdp1, 0, "Failed to create a src_buf pool\n");
 		fail++;
 	}
 
 	dst_bufs = fdp1_v4l2_allocate_buffers(fdp1, dev,
-			V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE, 4);
+			V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE, V4L2_FIELD_NONE, 4);
 	if (!dst_bufs) {
 		kprint(fdp1, 0, "Failed to create a dst_buf pool\n");
 		fail++;
