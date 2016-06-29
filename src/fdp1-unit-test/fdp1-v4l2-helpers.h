@@ -67,6 +67,7 @@ struct fdp1_m2m {
 void start_test(struct fdp1_context * fdp1, char * test);
 
 char *v4l2_field(enum v4l2_field f);
+char * q_type(uint32_t type);
 
 struct fdp1_v4l2_dev * fdp1_v4l2_open(struct fdp1_context * fdp1);
 int fdp1_v4l2_close(struct fdp1_v4l2_dev * dev);

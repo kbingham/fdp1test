@@ -54,6 +54,11 @@ char *v4l2_field(enum v4l2_field f)
 	return v4l2_field_strs[f];
 }
 
+char * q_type(uint32_t type)
+{
+	return V4L2_TYPE_IS_OUTPUT(type) ? "Output" : "Capture";
+}
+
 struct fdp1_v4l2_dev * fdp1_v4l2_open(struct fdp1_context * fdp1)
 {
 	int ret;
