@@ -331,13 +331,14 @@ int fdp1_v4l2_buffer_pool_queue(struct fdp1_v4l2_dev * dev,
 static int fdp1_set_input_output_formats(struct fdp1_context * fdp1,
 		struct fdp1_v4l2_dev * dev,
 		uint32_t out_fourcc,
+		uint32_t out_field,
 		uint32_t cap_fourcc)
 {
 	uint32_t fail = 0;
 
 	fail += fdp1_v4l2_set_fmt(fdp1, dev, V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE,
 			fdp1->width, fdp1->height,
-			out_fourcc, V4L2_FIELD_NONE);
+			out_fourcc, out_field);
 
 	fail += fdp1_v4l2_set_fmt(fdp1, dev, V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE,
 			fdp1->width, fdp1->height,
@@ -352,6 +353,7 @@ static int fdp1_set_input_output_formats(struct fdp1_context * fdp1,
 struct fdp1_m2m *
 fdp1_create_m2m(struct fdp1_context * fdp1,
 		uint32_t out_fourcc,
+		uint32_t out_field,
 		uint32_t cap_fourcc)
 {
 	int ret;
@@ -376,7 +378,7 @@ fdp1_create_m2m(struct fdp1_context * fdp1,
 	}
 
 	fail = fdp1_set_input_output_formats(fdp1, m2m->dev,
-			out_fourcc, cap_fourcc);
+			out_fourcc, out_field, cap_fourcc);
 
 	if (fail) {
 		/* We need to know our starting condition for the rest of the tests here */

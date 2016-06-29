@@ -84,6 +84,7 @@ int fdp1_v4l2_buffer_pool_queue(struct fdp1_v4l2_dev * dev,
 struct fdp1_m2m *
 fdp1_create_m2m(struct fdp1_context * fdp1,
 		uint32_t out_fourcc,
+		uint32_t out_field,
 		uint32_t cap_fourcc);
 
 void fdp1_free_m2m(struct fdp1_m2m * m2m);

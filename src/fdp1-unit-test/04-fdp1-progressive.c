@@ -95,7 +95,8 @@ static int fdp1_run_progressive_frames(struct fdp1_context * fdp1)
 
 	start_test(fdp1, "Stream Test");
 
-	m2m = fdp1_create_m2m(fdp1, V4L2_PIX_FMT_YUYV, V4L2_PIX_FMT_YUYV);
+	m2m = fdp1_create_m2m(fdp1, V4L2_PIX_FMT_YUYV, V4L2_FIELD_NONE,
+			V4L2_PIX_FMT_YUYV);
 
 	if (!m2m) {
 		kprint(fdp1, 0, "Failed to create an M2M object\n");
