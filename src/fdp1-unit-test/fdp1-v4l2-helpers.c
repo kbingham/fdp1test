@@ -463,15 +463,50 @@ int fdp1_m2m_stream_on(struct fdp1_m2m * m2m, int type)
 	return fail;
 }
 
+int fdp1_m2m_wait(struct fdp1_m2m * m2m, int type)
+{
+	fd_set read_fds;
+	fd_set write_fds;
+
+	int r;
+	FD_ZERO(&write_fds);
+	FD_ZERO(&read_fds);
+
+	printf("Before select\n");
+
+	if (V4L2_TYPE_IS_OUTPUT(type)) {
+		FD_SET(m2m->dev->fd, &write_fds);
+		r = select(m2m->dev->fd + 1, NULL, &write_fds, NULL, 0);
+	} else {
+		FD_SET(m2m->dev->fd, &read_fds);
+		r = select(m2m->dev->fd + 1, &read_fds, NULL, NULL, 0);
+	}
+
+	if (FD_ISSET(m2m->dev->fd, &read_fds))
+		printf("FD %d Is ready to read!\n", m2m->dev->fd);
+
+	if (FD_ISSET(m2m->dev->fd, &write_fds))
+		printf("FD %d Is ready to write!\n", m2m->dev->fd);
+
+	if (r < 0) {
+		fprintf(stderr, "Select Failed\n");
+		perror("select");
+	}
+
+	return r;
+}
+
 struct fdp1_v4l2_buffer *
 fdp1_m2m_dequeue_output(struct fdp1_m2m * m2m)
 {
+	fdp1_m2m_wait(m2m, V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE);
 	return fdp1_v4l2_dequeue_buffer(m2m->dev, &m2m->src_queue);
 }
 
 struct fdp1_v4l2_buffer *
 fdp1_m2m_dequeue_capture(struct fdp1_m2m * m2m)
 {
+	fdp1_m2m_wait(m2m, V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE);
 	return fdp1_v4l2_dequeue_buffer(m2m->dev, &m2m->dst_queue);
 }
 
