@@ -36,6 +36,24 @@ void start_test(struct fdp1_context * fdp1, char * test)
 		puts(test);
 }
 
+static char *v4l2_field_strs[] = {
+	"V4L2_FIELD_ANY",
+	"V4L2_FIELD_NONE",
+	"V4L2_FIELD_TOP",
+	"V4L2_FIELD_BOTTOM",
+	"V4L2_FIELD_INTERLACED",
+	"V4L2_FIELD_SEQ_TB",
+	"V4L2_FIELD_SEQ_BT",
+	"V4L2_FIELD_ALTERNATE",
+	"V4L2_FIELD_INTERLACED_TB",
+	"V4L2_FIELD_INTERLACED_BT",
+};
+
+char *v4l2_field(enum v4l2_field f)
+{
+	return v4l2_field_strs[f];
+}
+
 struct fdp1_v4l2_dev * fdp1_v4l2_open(struct fdp1_context * fdp1)
 {
 	int ret;
