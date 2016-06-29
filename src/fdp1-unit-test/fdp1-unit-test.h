@@ -41,6 +41,7 @@ int fdp1_open_tests(struct fdp1_context * fdp1);
 int fdp1_allocation_tests(struct fdp1_context * fdp1);
 int fdp1_stream_on_tests(struct fdp1_context * fdp1);
 int fdp1_progressive(struct fdp1_context * fdp1);
+int fdp1_deinterlace(struct fdp1_context * fdp1);
 
 #define memzero(x)\
 	memset(&(x), 0, sizeof (x));
