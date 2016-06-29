@@ -1,0 +1,81 @@
+FDP1 Test Repository
+--------------------
+
+This repository contains scripts and source code to assist with testing the
+RCar FDP1 device driver.
+
+This repository uses autoconf and automake to build the source code, and
+install, and can be used in the usual manner with:
+  ./configure; make; make install
+
+Out of tree building is supported, and of course this repository allows cross
+compiling (Only cross compiling to AARCH64 has been tested)
+
+
+Test Utilities
+--------------
+
+When installed in a target filesystem, this repository provides the following
+test utilities:
+
+fdp1-unit-test:
+  --device/-d     :  Use device /dev/videoX (0)
+  --width/-w      :  Set width [128]
+  --height/-h     :  Set height [80]
+  --num_frames/-n :  Number of frames to process [30]
+  --hexdump/x     :  Hexdump instead of draw
+  --verbose/v     :  Verbose test output [0]
+  --help/-?       :  Display this help
+
+  This binary will run a selection of increasing workloads and attempts to test
+  specific areas of the FDP1 driver.
+
+  It could also be used for examples on how to send buffers into the hardware
+  using the v4l2 layer
+
+fdp1-gst-tests:
+  fdp1-gst-tests uses gstreamer to generate test data, and inject the frames
+  into the FDP1 device. The output is captured, and encoded (with optional
+  lossless encoding) into and h264 mp4 container for external viewing of the
+  data. The output of each test is stored in a kernel specific output folder
+  for reference.
+
+
+fdp1-gst-transcode-file:
+  fdp1-gst-transcode-file accepts a video media file supported by gstreamers
+  decode pipelines, and will queue frames through the FDP1, re-encode the
+  output and store in a kernel specific output folder
+
+
+fdp1-v4l2-compliance:
+  This script will execute vl4l2-compliance, and store the result in a kernel
+  specific output folder.
+
+
+Full Test Procedure
+-------------------
+
+ - Boot a target supporting the FDP1, with a kernel configured with the FDP1
+   driver
+
+ - Install these utilities in the target filesystem
+
+ - From a shell execute the following tests:
+ - fdp1-v4l2-compliance
+ - fdp1-unit-tests
+ - fdp1-gst-tests -f
+
+
+Deprecated Binaries
+-------------------
+
+The following binaries are historical and not intended for use in testing.
+They are deprecated and could be removed:
+
+fdp1-test:
+  The original code used for testing early interactions with the fdp1.
+  Based on process-vmalloc
+
+process-vmalloc:
+  The original test code source for testing an m2m device.
+
