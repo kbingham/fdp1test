@@ -27,6 +27,8 @@ struct fdp1_v4l2_buffer {
 	struct v4l2_plane planes[3];
 	uint32_t sizes[3]; // plane sizes
 	char * mem[3];
+	unsigned int type;
+	unsigned int index;
 };
 
 #define MAX_BUFFER_POOL_SIZE 4
@@ -62,11 +64,19 @@ fdp1_v4l2_allocate_buffers(struct fdp1_context * fdp1,
 
 void fdp1_v4l2_free_buffers(struct fdp1_v4l2_buffer_pool * pool);
 
+int fdp1_v4l2_queue_buffer(struct fdp1_v4l2_dev * dev,
+		struct fdp1_v4l2_buffer * buffer);
+
+int fdp1_v4l2_buffer_pool_queue(struct fdp1_v4l2_dev * dev,
+		struct fdp1_v4l2_buffer_pool * pool, unsigned int i);
+
 struct fdp1_m2m *
 fdp1_create_m2m(struct fdp1_context * fdp1,
 		uint32_t out_fourcc,
 		uint32_t cap_fourcc);
 
 void fdp1_free_m2m(struct fdp1_m2m * m2m);
+
+int fdp1_m2m_stream_on(struct fdp1_m2m * m2m, int type);
 
 #endif /* _FDP1_V4L2_HELPERS_H_ */

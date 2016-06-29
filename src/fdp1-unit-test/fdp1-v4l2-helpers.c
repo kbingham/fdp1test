@@ -231,6 +231,8 @@ fdp1_v4l2_allocate_buffers(struct fdp1_context * fdp1,
 	for (i = 0; i < pool->qty; ++i) {
 		fail += fdp1_v4l2_query_buffer(fdp1, v4l2_dev,
 				&pool->buffer[i], type, i);
+		pool->buffer[i].type = type;
+		pool->buffer[i].index = i;
 	}
 
 	if (fail) {
@@ -257,6 +259,44 @@ void fdp1_v4l2_free_buffers(struct fdp1_v4l2_buffer_pool * pool)
 	}
 
 	free(pool);
+}
+
+int fdp1_v4l2_queue_buffer(struct fdp1_v4l2_dev * dev,
+		struct fdp1_v4l2_buffer * buffer)
+{
+	/* Using the mplane API for single planes so far */
+	struct v4l2_buffer buf = { 0 };
+	struct v4l2_plane planes[1] = { 0 };
+	int ret;
+
+	fprintf(stderr, "QBUF type=%d idx=%d: size (%d) %m\n",
+			buffer->type, buffer->index, buffer->sizes[0]);
+
+	buf.type	= buffer->type;
+	buf.memory	= V4L2_MEMORY_MMAP;
+	buf.index	= buffer->index;
+	buf.m.planes 	= planes;
+	buf.length	= 1;
+
+	buf.m.planes[0].length = buffer->sizes[0];
+	buf.m.planes[0].bytesused = buffer->sizes[0];
+
+	ret = ioctl(dev->fd, VIDIOC_QBUF, &buf);
+	if (ret) {
+		fprintf(stderr, "Failed to QBUF type=%d idx=%d: size (%d) %m\n",
+				buffer->type, buffer->index, buffer->sizes[0]);
+
+		perror("VIDIOC_QBUF");
+	}
+
+
+	return ret;
+}
+
+int fdp1_v4l2_buffer_pool_queue(struct fdp1_v4l2_dev * dev,
+		struct fdp1_v4l2_buffer_pool * pool, unsigned int i)
+{
+	return fdp1_v4l2_queue_buffer(dev, &pool->buffer[i]);
 }
 
 static int fdp1_set_input_output_formats(struct fdp1_context * fdp1,
@@ -349,3 +389,18 @@ void fdp1_free_m2m(struct fdp1_m2m * m2m)
 	fdp1_v4l2_close(m2m->dev);
 	free(m2m);
 }
+
+int fdp1_m2m_stream_on(struct fdp1_m2m * m2m, int type)
+{
+	int fail = 0;
+	int ret;
+
+	ret = ioctl(m2m->dev->fd, VIDIOC_STREAMON, &type);
+	if (ret != 0) {
+		perror("VIDIOC_STREAMON");
+		fail++;
+	}
+
+	return fail;
+}
+
