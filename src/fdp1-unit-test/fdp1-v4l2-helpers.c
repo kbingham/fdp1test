@@ -54,6 +54,20 @@ char *v4l2_field(enum v4l2_field f)
 	return v4l2_field_strs[f];
 }
 
+static char * fdp1_deint_mode_strs[] = {
+	"FDP1_PROGRESSIVE",
+	"FDP1_ADAPT2D3D",
+	"FDP1_FIXED2D",
+	"FDP1_FIXED3D",
+	"FDP1_PREVFIELD",
+	"FDP1_NEXTFIELD",
+};
+
+char *fdp1_deint_mode_str(enum fdp1_deint_mode m)
+{
+	return fdp1_deint_mode_strs[m];
+}
+
 char * q_type(uint32_t type)
 {
 	return V4L2_TYPE_IS_OUTPUT(type) ? "Output" : "Capture";
