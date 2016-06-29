@@ -319,6 +319,8 @@ fdp1_v4l2_dequeue_buffer(struct fdp1_v4l2_dev * dev, struct fdp1_v4l2_queue * qu
 	buffer = &queue->pool->buffer[qbuf.index];
 	buffer->bytesused = qbuf.m.planes[0].bytesused;
 
+	queue->sequence_out++;
+
 	return buffer;
 }
 

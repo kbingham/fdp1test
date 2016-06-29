@@ -53,6 +53,7 @@ struct fdp1_v4l2_buffer_pool {
 struct fdp1_v4l2_queue {
 	unsigned int type;
 	struct fdp1_v4l2_buffer_pool * pool;
+	unsigned int sequence_out;
 };
 
 struct fdp1_m2m {
