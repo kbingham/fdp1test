@@ -356,16 +356,19 @@ fdp1_create_m2m(struct fdp1_context * fdp1,
 		return NULL;
 	}
 
-	m2m->src_bufs = fdp1_v4l2_allocate_buffers(fdp1, m2m->dev,
+	/* This should be wrapped in a 'create-queue' later */
+	m2m->src_queue.type = V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE;
+	m2m->src_queue.pool = fdp1_v4l2_allocate_buffers(fdp1, m2m->dev,
 			V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE, 4);
-	if (!m2m->src_bufs) {
+	if (!m2m->src_queue.pool) {
 		kprint(fdp1, 0, "Failed to create a src_buf pool\n");
 		fail++;
 	}
 
-	m2m->dst_bufs = fdp1_v4l2_allocate_buffers(fdp1, m2m->dev,
+	m2m->dst_queue.type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
+	m2m->dst_queue.pool = fdp1_v4l2_allocate_buffers(fdp1, m2m->dev,
 			V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE, 4);
-	if (!m2m->dst_bufs) {
+	if (!m2m->dst_queue.pool) {
 		kprint(fdp1, 0, "Failed to create a dst_buf pool\n");
 		fail++;
 	}
@@ -384,8 +387,8 @@ void fdp1_free_m2m(struct fdp1_m2m * m2m)
 		return;
 
 	/* Clean Up */
-	fdp1_v4l2_free_buffers(m2m->src_bufs);
-	fdp1_v4l2_free_buffers(m2m->dst_bufs);
+	fdp1_v4l2_free_buffers(m2m->src_queue.pool);
+	fdp1_v4l2_free_buffers(m2m->dst_queue.pool);
 	fdp1_v4l2_close(m2m->dev);
 	free(m2m);
 }

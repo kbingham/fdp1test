@@ -37,10 +37,16 @@ struct fdp1_v4l2_buffer_pool {
 	struct fdp1_v4l2_buffer buffer[MAX_BUFFER_POOL_SIZE];
 };
 
+struct fdp1_v4l2_queue {
+	unsigned int type;
+	struct fdp1_v4l2_buffer_pool * pool;
+};
+
 struct fdp1_m2m {
 	struct fdp1_v4l2_dev * dev;
-	struct fdp1_v4l2_buffer_pool * src_bufs;
-	struct fdp1_v4l2_buffer_pool * dst_bufs;
+
+	struct fdp1_v4l2_queue src_queue;
+	struct fdp1_v4l2_queue dst_queue;
 };
 
 

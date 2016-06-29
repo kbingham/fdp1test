@@ -52,17 +52,17 @@ static int fdp1_stream_on(struct fdp1_context * fdp1)
 		return TEST_FAIL;
 	}
 
-	for (i = 0; i < m2m->src_bufs->qty; i++) {
-		fdp1_fill_buffer(&m2m->src_bufs->buffer[i]);
-		ret = fdp1_v4l2_buffer_pool_queue(m2m->dev, m2m->src_bufs, i);
+	for (i = 0; i < m2m->src_queue.pool->qty; i++) {
+		fdp1_fill_buffer(&m2m->src_queue.pool->buffer[i]);
+		ret = fdp1_v4l2_buffer_pool_queue(m2m->dev, m2m->src_queue.pool, i);
 		kprint(fdp1, 1, "Queued output buffer %d from src_bufs (%d)\n", i, ret);
 
 		if (ret)
 			fail++;
 	}
 
-	for (i = 0; i < m2m->dst_bufs->qty; i++) {
-		ret = fdp1_v4l2_buffer_pool_queue(m2m->dev, m2m->dst_bufs, i);
+	for (i = 0; i < m2m->dst_queue.pool->qty; i++) {
+		ret = fdp1_v4l2_buffer_pool_queue(m2m->dev, m2m->dst_queue.pool, i);
 		kprint(fdp1, 1, "Queued output buffer %d from dst_bufs (%d)\n", i, ret);
 
 		if (ret)
