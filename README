@@ -61,9 +61,13 @@ Full Test Procedure
  - Install these utilities in the target filesystem
 
  - From a shell execute the following tests:
- - fdp1-v4l2-compliance
- - fdp1-unit-tests
- - fdp1-gst-tests -f
+   - Each command supports a '-d' flag to specify a target video device number
+     For example, to test /dev/video3, pass -d3 to each command
+
+ - fdp1-v4l2-compliance		# Run v4l2 tests
+ - fdp1-unit-tests		# Run progressive tests
+ - fdp1-unit-tests -i		# Run interlaced tests
+ - fdp1-gst-tests -f   		# Run full format conversion tests
 
 
 Deprecated Binaries
