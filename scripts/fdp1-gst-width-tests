@@ -1,0 +1,6 @@
+#!/bin/sh
+
+for w in `seq 80 128`;
+do
+  fdp1-gst-tests -h 80 -w $w -n 60
+done;
