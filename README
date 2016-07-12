@@ -12,6 +12,16 @@ Out of tree building is supported, and of course this repository allows cross
 compiling (Only cross compiling to AARCH64 has been tested)
 
 
+Dependencies
+------------
+
+The tests which utilise Gstreamer, require gst-plugins-good to be complied with
+support for M2M V4L2 devices.
+
+This can be achieved by using the configure option: --enable-v4l2-probe
+or enabling the relevant option in a mainline buildroot configuration
+
+
 Test Utilities
 --------------
 
