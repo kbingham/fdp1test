@@ -539,7 +539,7 @@ int fdp1_m2m_set_ctrl(struct fdp1_m2m * m2m, uint32_t ctrl_id, int32_t val)
 
 	ret = ioctl(m2m->dev->fd, VIDIOC_S_CTRL, &ctrl);
 	if (ret != 0) {
-		perror("VIDIOC_G_CTRL");
+		perror("VIDIOC_S_CTRL");
 		return ret;
 	}
 
