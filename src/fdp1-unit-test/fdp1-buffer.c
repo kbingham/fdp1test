@@ -29,11 +29,13 @@ void fdp1_fill_buffer(struct fdp1_v4l2_buffer * buffer)
 	char * p;
 	int i, k;
 
-	for (i=0; i < buffer->n_planes; i++)
+	for (i=0; i < buffer->n_planes; i++) {
 		p = buffer->mem[i];
+
 		for (k = 0; k < buffer->sizes[i]; k++) {
 			*p++ = get_content_char(k);
 		}
+	}
 }
 
 void fdp1_clear_buffer(struct fdp1_v4l2_buffer * buffer)
