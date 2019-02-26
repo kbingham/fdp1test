@@ -1,5 +1,7 @@
 bin_PROGRAMS = fdp1-unit-test
 
+AM_CPPFLAGS = -I$(top_srcdir)/ -I$(top_srcdir)/lib -I$(top_srcdir)/include/
+
 fdp1_unit_test_SOURCES = \
 	fdp1-unit-tests.c \
 	fdp1-v4l2-helpers.c \
