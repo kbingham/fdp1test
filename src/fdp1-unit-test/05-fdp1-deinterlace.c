@@ -217,7 +217,7 @@ static int fdp1_run_deinterlaced(struct fdp1_context * fdp1,
 
 	kprint(fdp1, 2, "Queued %d dest (capture) buffers\n", i);
 
-	if (fdp1_m2m_set_ctrl(m2m, V4L2_CID_DEINT_MODE, deint_mode)) {
+	if (fdp1_m2m_set_ctrl(m2m, V4L2_CID_DEINTERLACING_MODE, deint_mode)) {
 		kprint(fdp1, 1, "Failed to set DEINT MODE\n");
 		fail++;
 		fdp1_free_m2m(m2m);
@@ -246,7 +246,7 @@ static int fdp1_run_deinterlaced(struct fdp1_context * fdp1,
 	/* Deint mode is only set when stream on is called.
 	 * We can only 'verify' after we start streaming...
 	 */
-	if (fdp1_m2m_get_ctrl(m2m, V4L2_CID_DEINT_MODE, (int*)&current_mode))
+	if (fdp1_m2m_get_ctrl(m2m, V4L2_CID_DEINTERLACING_MODE, (int*)&current_mode))
 	{
 		kprint(fdp1, 1, "Failed to get DEINT MODE\n");
 		fail++;

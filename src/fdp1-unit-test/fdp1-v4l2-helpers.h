@@ -14,7 +14,6 @@
 #ifndef _FDP1_V4L2_HELPERS_H_
 #define _FDP1_V4L2_HELPERS_H_
 
-#define V4L2_CID_DEINT_MODE		(V4L2_CID_USER_BASE + 0x1000)
 
 enum fdp1_deint_mode {
 	FDP1_PROGRESSIVE = 0, /* Must be zero when !deinterlacing */
